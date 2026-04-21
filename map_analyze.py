@@ -151,9 +151,22 @@ def parse_sections(lines: list[str]) -> list[Section]:
     return sections
 
 
+# Sections that carry debug/metadata and have a fake address of 0x0 —
+# they must not be counted against any runtime memory region.
+_DEBUG_PREFIXES = (
+    ".debug_", ".zdebug_", ".comment", ".ARM.attributes", ".gnu.attributes",
+)
+
+def is_debug_section(name: str) -> bool:
+    return any(name.startswith(p) for p in _DEBUG_PREFIXES)
+
+
 def assign_regions(sections: list[Section], regions: dict[str, MemoryRegion]) -> None:
-    """Tag each section with the memory region whose address range contains it."""
+    """Tag each section with the memory region whose address range contains it.
+    Debug/metadata sections are excluded from region accounting."""
     for section in sections:
+        if is_debug_section(section.name):
+            continue
         for region in regions.values():
             if region.origin <= section.address < region.end:
                 section.region = region.name
@@ -185,8 +198,8 @@ def fmt_bar(used: int, total: int, width: int = 24) -> str:
 # Output
 # ---------------------------------------------------------------------------
 
-SEPARATOR = "=" * 74
-THIN_SEP  = "-" * 74
+SEPARATOR = "=" * 80
+THIN_SEP  = "-" * 80
 
 
 def print_summary(regions: dict[str, MemoryRegion],
@@ -224,7 +237,7 @@ def print_summary(regions: dict[str, MemoryRegion],
 
     # ---- Per-region section detail ----
     if show_detail:
-        print(f"\n{'SECTION DETAIL BY REGION':^74}")
+        print(f"\n{'SECTION DETAIL BY REGION':^80}")
 
         for name, region in regions.items():
             secs = [s for s in region_sections.get(name, []) if s.size >= min_size]
@@ -233,16 +246,19 @@ def print_summary(regions: dict[str, MemoryRegion],
 
             used  = region_usage.get(name, 0)
             total = region.length
+            pct_region = (used / total * 100) if total > 0 else 0.0
+            bar = fmt_bar(used, total)
             print(f"\n  +- {name}  "
                   f"Origin: 0x{region.origin:08X}  "
                   f"Length: {fmt_size(total)}  "
-                  f"({fmt_size(used)} used, {region.attributes})")
-            print(f"  |  {'Section':<30} {'Address':>12}  {'Size':>10}  {'%':>5}")
-            print(f"  |  {'-'*30}  {'-'*12}  {'-'*10}  {'-'*5}")
+                  f"Used: {fmt_size(used)} ({pct_region:.1f}%)  {bar}")
+            print(f"  |  {'Section':<32} {'Address':>12}  {'Size':>10}  {'% of region':>12}  {'% of used':>10}")
+            print(f"  |  {'-'*32}  {'-'*12}  {'-'*10}  {'-'*12}  {'-'*10}")
 
             for s in sorted(secs, key=lambda x: -x.size):
-                pct = (s.size / used * 100) if used else 0.0
-                print(f"  |  {s.name:<30}  0x{s.address:010X}  {fmt_size(s.size):>10}  {pct:4.1f}%")
+                pct_of_total = (s.size / total * 100) if total else 0.0
+                pct_of_used  = (s.size / used  * 100) if used  else 0.0
+                print(f"  |  {s.name:<32}  0x{s.address:010X}  {fmt_size(s.size):>10}  {pct_of_total:>11.1f}%  {pct_of_used:>9.1f}%")
 
         if unassigned:
             filtered = [s for s in unassigned if s.size >= min_size]
