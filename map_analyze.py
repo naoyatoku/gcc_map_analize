@@ -220,7 +220,7 @@ def print_summary(regions: dict[str, MemoryRegion],
     print(f"  {'Region':<14} {'Used':>10} {'Total':>10} {'Free':>10}  {'Usage':>6}  Bar")
     print(THIN_SEP)
 
-    for name, region in regions.items():
+    for name, region in sorted(regions.items(), key=lambda x: x[1].origin):
         used  = region_usage.get(name, 0)
         total = region.length
         free  = total - used
@@ -239,7 +239,7 @@ def print_summary(regions: dict[str, MemoryRegion],
     if show_detail:
         print(f"\n{'SECTION DETAIL BY REGION':^80}")
 
-        for name, region in regions.items():
+        for name, region in sorted(regions.items(), key=lambda x: x[1].origin):
             secs = [s for s in region_sections.get(name, []) if s.size >= min_size]
             if not secs:
                 continue
