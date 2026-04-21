@@ -280,9 +280,11 @@ def main() -> None:
     # --- Argument parsing (no external deps) ---
     args = sys.argv[1:]
 
-    if not args or args[0] in ("-h", "--help"):
+    if args and args[0] in ("-h", "--help"):
         print(__doc__)
         sys.exit(0)
+
+    DEFAULT_MAP = "disco_nc_test.map"
 
     map_file   = None
     show_all   = False
@@ -297,15 +299,12 @@ def main() -> None:
         elif arg.startswith("--min-size="):
             min_size = int(arg.split("=", 1)[1])
         elif arg.startswith("--min-size"):
-            # handled by next arg — keep it simple, require = form
             pass
         elif not arg.startswith("--"):
             map_file = arg
 
     if map_file is None:
-        print("Error: no map file specified.\n")
-        print(__doc__)
-        sys.exit(1)
+        map_file = DEFAULT_MAP
 
     path = Path(map_file)
     if not path.exists():
