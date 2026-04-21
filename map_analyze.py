@@ -255,7 +255,7 @@ def print_summary(regions: dict[str, MemoryRegion],
             print(f"  |  {'Section':<32} {'Address':>12}  {'Size':>10}  {'% of region':>12}  {'% of used':>10}")
             print(f"  |  {'-'*32}  {'-'*12}  {'-'*10}  {'-'*12}  {'-'*10}")
 
-            for s in sorted(secs, key=lambda x: -x.size):
+            for s in sorted(secs, key=lambda x: x.address):
                 pct_of_total = (s.size / total * 100) if total else 0.0
                 pct_of_used  = (s.size / used  * 100) if used  else 0.0
                 print(f"  |  {s.name:<32}  0x{s.address:010X}  {fmt_size(s.size):>10}  {pct_of_total:>11.1f}%  {pct_of_used:>9.1f}%")
