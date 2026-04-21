@@ -1,0 +1,63 @@
+
+Archive member included to satisfy reference by file (symbol)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+FLASH            0x0000000008000000 0x0000000000100000 xr
+RAM              0x0000000020000000 0x0000000000020000 xrw
+CCMRAM           0x0000000010000000 0x0000000000010000 xrw
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+LOAD build/startup_stm32f4xx.o
+LOAD build/main.o
+LOAD build/usb_device.o
+LOAD build/sensor.o
+
+.isr_vector     0x0000000008000000      0x1c8
+                0x0000000008000000                PROVIDE (__Vectors = .)
+ *(.isr_vector)
+ .isr_vector    0x0000000008000000      0x1c8 build/startup_stm32f4xx.o
+                0x0000000008000000                __Vectors
+
+.text           0x00000000080001c8    0xa4b0
+                0x00000000080001c8                _stext = .
+ *(.text)
+ *(.text*)
+ .text          0x00000000080001c8      0x80 build/startup_stm32f4xx.o
+ .text          0x0000000008000248    0x2200 build/main.o
+ .text          0x0000000008002448    0x5800 build/usb_device.o
+ .text          0x0000000008007c48    0x2cb0 build/sensor.o
+ .text          0x000000000800a8f8       0x0 build/unused.o
+
+.rodata         0x000000000800a6b8     0x1f10
+ *(.rodata)
+ *(.rodata*)
+ .rodata        0x000000000800a6b8     0x1500 build/main.o
+ .rodata        0x000000000800bbb8      0xa10 build/usb_device.o
+
+.data           0x0000000020000000     0x2800
+ *(.data)
+ *(.data*)
+ .data          0x0000000020000000      0xc00 build/main.o
+ .data          0x0000000020000c00     0x1200 build/usb_device.o
+ .data          0x0000000020001e00      0x600 build/sensor.o
+
+.bss            0x0000000020002800     0x8000
+ *(.bss)
+ *(.bss*)
+ .bss           0x0000000020002800     0x4000 build/main.o
+ .bss           0x0000000020006800     0x4000 build/usb_device.o
+
+.ccm_data       0x0000000010000000     0x3000
+ .ccm_data      0x0000000010000000     0x3000 build/sensor.o
+
+.heap           0x000000002000a800     0x1000
+ *(.heap)
+
+.stack          0x000000002000b800      0x800
+ *(.stack)
+
+OUTPUT(build/firmware.elf elf32-littlearm)
